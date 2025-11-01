@@ -1,7 +1,7 @@
 import sqlite3
 from model import User, Film
 
-db = sqlite3.connect('./data/kinomania.db', check_same_thread=False)
+db = sqlite3.connect('./database/kinomania.db', check_same_thread=False)
 cursor = db.cursor()
 
 
@@ -17,9 +17,7 @@ def create_tables():
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS film(
                 film_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
-                title TEXT NOT NULL,
-                year INTEGER NOT NULL,
-                genre TEXT NOT NULL,
+                caption TEXT NOT NULL,
                 file_id TEXT NOT NULL
             )
         ''')
@@ -47,12 +45,14 @@ def add_user(user: User):
 
 
 def add_film(film: Film):
+    caption = film.caption if film.caption is None else ""
     try:
         cursor.execute(
-            "INSERT INTO film (title, year, genre, file_id) VALUES (?, ?, ?, ?)",
-            (film.title.strip(), film.year, film.genre.strip(), film.file_id.strip())
+            "INSERT INTO film (caption, file_id) VALUES (?, ?)",
+            (caption.strip(), film.file_id.strip())
         )
         db.commit()
+        return cursor.lastrowid
     except sqlite3.Error as e:
         print(f"SQLite Error: {e}")
 
@@ -88,15 +88,9 @@ def update_film(film: Film):
 
     fields = []
     values = []
-    if film.title is not None:
-        fields.append("title = ?")
-        values.append(film.title.strip())
-    if film.year is not None:
-        fields.append("year = ?")
-        values.append(film.year)
-    if film.genre is not None:
-        fields.append("genre = ?")
-        values.append(film.genre.strip())
+    if film.caption is not None:
+        fields.append("caption = ?")
+        values.append(film.caption.strip())
     if film.file_id is not None:
         fields.append("file_id = ?")
         values.append(film.file_id.strip())
@@ -146,15 +140,13 @@ def get_user(user_id: int) -> User | None:
 
 def get_film(film_id: int) -> Film | None:
     try:
-        cursor.execute("SELECT film_id, title, year, genre, file_id FROM film WHERE film_id = ?", (film_id,))
+        cursor.execute("SELECT film_id, caption, file_id FROM film WHERE film_id = ?", (film_id,))
         row = cursor.fetchone()
         if row:
-            film_id, title, year, genre, file_id = row
+            film_id, caption, file_id = row
             return Film(
                 film_id=film_id,
-                title=str(title).strip() if title else "",
-                year=year,
-                genre=str(genre).strip() if genre else "",
+                caption=str(caption).strip() if caption else "",
                 file_id=str(file_id).strip() if file_id else ""
             )
         return None
@@ -164,18 +156,15 @@ def get_film(film_id: int) -> Film | None:
 
 
 def get_all_films() -> list[Film]:
-    """Barcha filmlarni olish uchun qo'shimcha funksiya"""
     try:
         cursor.execute("SELECT film_id, title, year, genre, file_id FROM film")
         rows = cursor.fetchall()
         films = []
         for row in rows:
-            film_id, title, year, genre, file_id = row
+            film_id, caption, file_id = row
             films.append(Film(
                 film_id=film_id,
-                title=str(title).strip() if title else "",
-                year=year,
-                genre=str(genre).strip() if genre else "",
+                caption= caption,
                 file_id=str(file_id).strip() if file_id else ""
             ))
         return films
@@ -185,6 +174,5 @@ def get_all_films() -> list[Film]:
 
 
 def close_connection():
-    """Baza bilan ulanishni yopish"""
     cursor.close()
     db.close()
