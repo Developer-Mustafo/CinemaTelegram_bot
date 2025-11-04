@@ -45,17 +45,16 @@ def add_user(user: User):
 
 
 def add_film(film: Film):
-    caption = film.caption if film.caption is None else ""
+    caption = film.caption if film.caption is not None else ""
     try:
         cursor.execute(
             "INSERT INTO film (caption, file_id) VALUES (?, ?)",
-            (caption.strip(), film.file_id.strip())
+            (caption.strip(), film.file_id.strip() if film.file_id else None)
         )
         db.commit()
         return cursor.lastrowid
     except sqlite3.Error as e:
         print(f"SQLite Error: {e}")
-
 
 def update_user(user: User):
     if user.user_id is None:
