@@ -5,7 +5,7 @@ from config import ADMIN_ID
 
 router = Router()
 
-@router.message(F.video, F.chat.type.in_({'supergroup', 'group', 'channel'}))
+@router.message(F.video, ~F.chat.type == "private")
 async def save_video(message: types.Message):
     caption = message.caption
     file_id = message.video.file_id
